@@ -15,15 +15,16 @@ namespace RedisPractice.Controllers
         }
         
         [HttpPost]
-        public async Task<IActionResult> Set(string key, string value)
+        public async Task<IActionResult> Set(string key, string value, int? ttl = null)
         {
             try
             {
                 if (_redisDb.KeyExists(key))
                     return Conflict($"Key '{key}' already exists");
 
-                await _redisDb.StringSetAsync(key, value);
-                return Ok($"Key '{key}' with value '{value}' has been set");
+                await _redisDb.StringSetAsync(key, value, ttl.HasValue ? TimeSpan.FromSeconds(ttl.Value) : null);
+
+                return Ok($"Key '{key}' with value '{value}' has been set {(ttl.HasValue ? $" with TTL {ttl} seconds" : "")}");
             }
             catch (RedisConnectionException)
             {
@@ -44,6 +45,7 @@ namespace RedisPractice.Controllers
                     return NotFound($"Key {key} not found");
 
                 var value = await _redisDb.StringGetAsync(key);
+
                 return Ok($"Value = '{value.ToString()}'");
             }
             catch (RedisConnectionException)
@@ -65,6 +67,7 @@ namespace RedisPractice.Controllers
                     return NotFound($"Key {key} not found");
 
                 await _redisDb.KeyDeleteAsync(key);
+
                 return Ok($"Key {key} deleted");
             }
             catch (RedisConnectionException)

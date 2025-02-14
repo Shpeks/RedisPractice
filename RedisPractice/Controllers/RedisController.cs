@@ -22,7 +22,8 @@ namespace RedisPractice.Controllers
                 if (_redisDb.KeyExists(key))
                     return Conflict($"Key '{key}' already exists");
 
-                await _redisDb.StringSetAsync(key, value, ttl.HasValue ? TimeSpan.FromSeconds(ttl.Value) : null);
+                int defaultTtl = 300;
+                await _redisDb.StringSetAsync(key, value, TimeSpan.FromSeconds(ttl ?? defaultTtl));
 
                 return Ok($"Key '{key}' with value '{value}' has been set {(ttl.HasValue ? $" with TTL {ttl} seconds" : "")}");
             }
@@ -45,6 +46,7 @@ namespace RedisPractice.Controllers
                     return NotFound($"Key {key} not found");
 
                 var value = await _redisDb.StringGetAsync(key);
+                await _redisDb.KeyExpireAsync(key, TimeSpan.FromMinutes(5));
 
                 return Ok($"Value = '{value.ToString()}'");
             }
